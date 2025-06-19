@@ -1,47 +1,44 @@
 import streamlit as st
-import joblib
-import numpy as np
 import pandas as pd
+import joblib
 
-# 🔹 Başlık
-st.title("🚕 NYC Taksi Ücreti Tahmini (Random Forest Model)")
+# Modeli yükle
+model = joblib.load("rf_model_light.pkl")
 
-# 🔹 Modeli Yükle
-model = joblib.load("random_forest_model.pkl")
+# Başlık
+st.title("🚖 NYC Taksi Ücreti Tahmin Uygulaması")
+st.markdown("Lütfen aşağıdaki bilgileri girerek tahmini ücreti hesaplayın.")
 
-# 🔹 Giriş Verileri
-st.header("📥 Yolculuk Bilgilerini Girin")
-
+# Giriş alanları
 passenger_count = st.slider("Yolcu Sayısı", 1, 6, 1)
-trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.1, value=1.5)
-PULocationID = st.number_input("Alış Noktası ID", min_value=1, max_value=263, value=10)
-DOLocationID = st.number_input("Varış Noktası ID", min_value=1, max_value=263, value=50)
-yolculuk_suresi = st.number_input("Yolculuk Süresi (dk)", min_value=1.0, value=10.0)
+trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.1, value=1.0)
+yolculuk_suresi = st.number_input("Yolculuk Süresi (dk)", min_value=1.0, value=5.0)
 
-# Opsiyonel Ekstra Ücretler
-jfk_ucreti_mi = st.checkbox("JFK Ücreti Var mı?")
-nakit_mi = st.checkbox("Ödeme Türü: Nakit mi?")
-nakit_odeme_mi = st.checkbox("Nakit Ödeme Seçildi mi?")
-diger_ucret_mi = st.checkbox("Diğer Ücret Var mı?")
-pazarlikli_mi = st.checkbox("Pazarlıklı Fiyat mı?")
+pickup_id = st.number_input("Alış Lokasyon ID", min_value=1, value=130)
+dropoff_id = st.number_input("Varış Lokasyon ID", min_value=1, value=249)
 
-# 🔹 Tahmin için veri çerçevesi oluştur
-input_data = pd.DataFrame({
-    "passenger_count": [passenger_count],
-    "trip_distance": [trip_distance],
-    "PULocationID": [PULocationID],
-    "DOLocationID": [DOLocationID],
-    "yolculuk_suresi": [yolculuk_suresi],
-    "jfk_ucreti_mi": [int(jfk_ucreti_mi)],
-    "nakit_mi": [int(nakit_mi)],
-    "nakit_odeme_mi": [int(nakit_odeme_mi)],
-    "diger_ucret_mi": [int(diger_ucret_mi)],
-    "pazarlikli_mi": [int(pazarlikli_mi)]
-})
+jfk_ucreti_mi = st.selectbox("JFK Ücreti Var mı?", ["Hayır", "Evet"])
+nakit_odeme_mi = st.selectbox("Nakit Ödeme mi?", ["Hayır", "Evet"])
+pazarlikli_mi = st.selectbox("Pazarlıklı mı?", ["Hayır", "Evet"])
+diger_ucret_mi = st.selectbox("Diğer Ücret Var mı?", ["Hayır", "Evet"])
 
-# Geri kalan dummy kolonlar (önemli değilse) 0 olabilir, istersen senin modeline göre ekleriz
+# Girdileri dönüştür
+input_dict = {
+    "passenger_count": passenger_count,
+    "trip_distance": trip_distance,
+    "yolculuk_suresi": yolculuk_suresi,
+    "PULocationID": pickup_id,
+    "DOLocationID": dropoff_id,
+    "jfk_ucreti_mi": 1 if jfk_ucreti_mi == "Evet" else 0,
+    "nakit_odeme_mi": 1 if nakit_odeme_mi == "Evet" else 0,
+    "pazarlikli_mi": 1 if pazarlikli_mi == "Evet" else 0,
+    "diger_ucret_mi": 1 if diger_ucret_mi == "Evet" else 0
+}
 
-# 🔹 Tahmin
-if st.button("Ücreti Tahmin Et"):
-    tahmin = model.predict(input_data)[0]
-    st.success(f"Tahmini Ücret: ${tahmin:.2f}")
+# Veri çerçevesi oluştur
+input_df = pd.DataFrame([input_dict])
+
+# Tahmin
+if st.button("Tahmini Ücreti Hesapla"):
+    prediction = model.predict(input_df)[0]
+    st.success(f"🚕 Tahmini Ücret: ${prediction:.2f}")
