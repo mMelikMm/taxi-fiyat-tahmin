@@ -1,51 +1,47 @@
 import streamlit as st
-import pandas as pd
 import joblib
+import numpy as np
+import pandas as pd
 
-# Modeli yükle
-model = joblib.load("catboost_model.pkl")
+# 🔹 Başlık
+st.title("🚕 NYC Taksi Ücreti Tahmini (Random Forest Model)")
 
-st.title("🚖 Taksi Ücreti Tahmini Uygulaması")
+# 🔹 Modeli Yükle
+model = joblib.load("random_forest_model.pkl")
 
-st.markdown("Yolculuk bilgilerini aşağıdan doldur, sistem tahmini fiyatı söylesin!")
+# 🔹 Giriş Verileri
+st.header("📥 Yolculuk Bilgilerini Girin")
 
-# Kullanıcı giriş alanları
-passenger_count = st.number_input("Yolcu Sayısı", min_value=1, max_value=6, value=1)
-trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.0, value=1.5)
-PULocationID = st.number_input("Alış Noktası ID", min_value=0, value=130)
-DOLocationID = st.number_input("Varış Noktası ID", min_value=0, value=205)
-yolculuk_suresi = st.number_input("Yolculuk Süresi (saniye)", min_value=60, value=600)
+passenger_count = st.slider("Yolcu Sayısı", 1, 6, 1)
+trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.1, value=1.5)
+PULocationID = st.number_input("Alış Noktası ID", min_value=1, max_value=263, value=10)
+DOLocationID = st.number_input("Varış Noktası ID", min_value=1, max_value=263, value=50)
+yolculuk_suresi = st.number_input("Yolculuk Süresi (dk)", min_value=1.0, value=10.0)
 
-# Diğer binary değişkenler (1 ya da 0)
-jfk_ucreti_mi = st.selectbox("JFK Ücreti Var mı?", [0, 1])
-nakit_mi = st.selectbox("Nakit mi?", [0, 1])
-pazarlikli_mi = st.selectbox("Pazarlıklı mı?", [0, 1])
-nakit_odeme_mi = st.selectbox("Nakit Ödeme mi?", [0, 1])
-diger_ucret_mi = st.selectbox("Diğer Ücret Var mı?", [0, 1])
+# Opsiyonel Ekstra Ücretler
+jfk_ucreti_mi = st.checkbox("JFK Ücreti Var mı?")
+nakit_mi = st.checkbox("Ödeme Türü: Nakit mi?")
+nakit_odeme_mi = st.checkbox("Nakit Ödeme Seçildi mi?")
+diger_ucret_mi = st.checkbox("Diğer Ücret Var mı?")
+pazarlikli_mi = st.checkbox("Pazarlıklı Fiyat mı?")
 
-# Giriş verisini oluştur
-input_data = pd.DataFrame([{
-    "passenger_count": passenger_count,
-    "trip_distance": trip_distance,
-    "PULocationID": PULocationID,
-    "DOLocationID": DOLocationID,
-    "yolculuk_suresi": yolculuk_suresi,
-    "jfk_ucreti_mi": jfk_ucreti_mi,
-    "nakit_mi": nakit_mi,
-    "pazarlikli_mi": pazarlikli_mi,
-    "nakit_odeme_mi": nakit_odeme_mi,
-    "diger_ucret_mi": diger_ucret_mi
-}])
+# 🔹 Tahmin için veri çerçevesi oluştur
+input_data = pd.DataFrame({
+    "passenger_count": [passenger_count],
+    "trip_distance": [trip_distance],
+    "PULocationID": [PULocationID],
+    "DOLocationID": [DOLocationID],
+    "yolculuk_suresi": [yolculuk_suresi],
+    "jfk_ucreti_mi": [int(jfk_ucreti_mi)],
+    "nakit_mi": [int(nakit_mi)],
+    "nakit_odeme_mi": [int(nakit_odeme_mi)],
+    "diger_ucret_mi": [int(diger_ucret_mi)],
+    "pazarlikli_mi": [int(pazarlikli_mi)]
+})
 
-# Gerekli olan tüm diğer değişkenleri sıfırla (eksikse model hata verir)
-for col in model.feature_names_:
-    if col not in input_data.columns:
-        input_data[col] = 0
+# Geri kalan dummy kolonlar (önemli değilse) 0 olabilir, istersen senin modeline göre ekleriz
 
-# Sıralama garanti olsun
-input_data = input_data[model.feature_names_]
-
-# Tahmin butonu
+# 🔹 Tahmin
 if st.button("Ücreti Tahmin Et"):
-    prediction = model.predict(input_data)[0]
-    st.success(f"🚕 Tahmini Ücret: ${prediction:.2f}")
+    tahmin = model.predict(input_data)[0]
+    st.success(f"Tahmini Ücret: ${tahmin:.2f}")
