@@ -2,28 +2,38 @@ import streamlit as st
 import pandas as pd
 import joblib
 
+# Sayfa ayarları
+st.set_page_config(page_title="Taksi Ücreti Tahmini", page_icon="🚖", layout="centered")
+
+# Başlık
+st.title("🚖 NYC Taksi Ücreti Tahmini Uygulaması")
+st.markdown("Gerçek veriye dayalı, **akıllı fiyat tahmin** sistemiyle tanışın! 💰")
+
+st.divider()
+
+# 🔻 Giriş alanları (iki sütunlu görünüm)
+col1, col2 = st.columns(2)
+
+with col1:
+    passenger_count = st.number_input("👥 Yolcu Sayısı", min_value=1, max_value=6, value=1)
+    trip_distance = st.number_input("📏 Mesafe (mil)", min_value=0.0, value=1.5)
+    PULocationID = st.number_input("📍 Alış Noktası ID", min_value=0, value=130)
+    yolculuk_suresi = st.number_input("⏱️ Süre (saniye)", min_value=60, value=600)
+    jfk_ucreti_mi = st.radio("🛫 JFK Ücreti Var mı?", [0, 1], horizontal=True)
+
+with col2:
+    DOLocationID = st.number_input("🎯 Varış Noktası ID", min_value=0, value=205)
+    nakit_mi = st.radio("💵 Nakit mi?", [0, 1], horizontal=True)
+    pazarlikli_mi = st.radio("🤝 Pazarlıklı mı?", [0, 1], horizontal=True)
+    nakit_odeme_mi = st.radio("🧾 Nakit Ödeme mi?", [0, 1], horizontal=True)
+    diger_ucret_mi = st.radio("➕ Diğer Ücret Var mı?", [0, 1], horizontal=True)
+
+st.divider()
+
 # Modeli yükle
 model = joblib.load("catboost_model.pkl")
 
-st.title("🚖 Taksi Ücreti Tahmini Uygulaması")
-
-st.markdown("Yolculuk bilgilerini aşağıdan doldur, sistem tahmini fiyatı söylesin!")
-
-# Kullanıcı giriş alanları
-passenger_count = st.number_input("Yolcu Sayısı", min_value=1, max_value=6, value=1)
-trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.0, value=1.5)
-PULocationID = st.number_input("Alış Noktası ID", min_value=0, value=130)
-DOLocationID = st.number_input("Varış Noktası ID", min_value=0, value=205)
-yolculuk_suresi = st.number_input("Yolculuk Süresi (saniye)", min_value=60, value=600)
-
-# Diğer binary değişkenler (1 ya da 0)
-jfk_ucreti_mi = st.selectbox("JFK Ücreti Var mı?", [0, 1])
-nakit_mi = st.selectbox("Nakit mi?", [0, 1])
-pazarlikli_mi = st.selectbox("Pazarlıklı mı?", [0, 1])
-nakit_odeme_mi = st.selectbox("Nakit Ödeme mi?", [0, 1])
-diger_ucret_mi = st.selectbox("Diğer Ücret Var mı?", [0, 1])
-
-# Giriş verisini oluştur
+# Giriş verisi
 input_data = pd.DataFrame([{
     "passenger_count": passenger_count,
     "trip_distance": trip_distance,
@@ -37,15 +47,17 @@ input_data = pd.DataFrame([{
     "diger_ucret_mi": diger_ucret_mi
 }])
 
-# Gerekli olan tüm diğer değişkenleri sıfırla (eksikse model hata verir)
+# Gerekirse eksik kolonları sıfırla
 for col in model.feature_names_:
     if col not in input_data.columns:
         input_data[col] = 0
 
-# Sıralama garanti olsun
+# Sütun sıralaması garanti olsun
 input_data = input_data[model.feature_names_]
 
-# Tahmin butonu
-if st.button("Ücreti Tahmin Et"):
+# Tahmin
+if st.button("🚕 Tahmini Ücreti Hesapla"):
     prediction = model.predict(input_data)[0]
-    st.success(f"🚕 Tahmini Ücret: ${prediction:.2f}")
+    st.success(f"💰 **Tahmini Ücret: ${prediction:.2f}**")
+
+    st.caption("📊 Bu tahmin, CatBoost modeli ile gerçek NYC taksi verilerine dayanarak yapılmıştır.")
