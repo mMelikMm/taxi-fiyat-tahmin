@@ -3,49 +3,49 @@ import pandas as pd
 import joblib
 
 # Modeli yükle
-model = joblib.load("rf_model_light.pkl")
+model = joblib.load("catboost_model.pkl")
 
-# Başlık
-st.title("🚖 NYC Taksi Ücreti Tahmin Uygulaması")
-st.markdown("Lütfen aşağıdaki bilgileri girin:")
+st.title("🚖 Taksi Ücreti Tahmini Uygulaması")
 
-# Girişler
-passenger_count = st.slider("Yolcu Sayısı", 1, 6, 1)
-trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.1, value=1.0)
-yolculuk_suresi = st.number_input("Yolculuk Süresi (dk)", min_value=1.0, value=5.0)
-PULocationID = st.number_input("Alış Lokasyon ID", min_value=1, value=130)
-DOLocationID = st.number_input("Varış Lokasyon ID", min_value=1, value=249)
-pazarlikli_mi = st.selectbox("Pazarlıklı mı?", ["Hayır", "Evet"])
-jfk_ucreti_mi = st.selectbox("JFK Ekstra Ücreti Var mı?", ["Hayır", "Evet"])
-diger_ucret_mi = st.selectbox("Diğer Ekstra Ücret Var mı?", ["Hayır", "Evet"])
-nakit_odeme_mi = st.selectbox("Nakit Ödeme mi?", ["Hayır", "Evet"])
+st.markdown("Yolculuk bilgilerini aşağıdan doldur, sistem tahmini fiyatı söylesin!")
 
-# Giriş verisini doğru sırayla alalım
-columns_order = [
-    'passenger_count',
-    'trip_distance',
-    'PULocationID',
-    'DOLocationID',
-    'yolculuk_suresi',
-    'pazarlikli_mi',
-    'jfk_ucreti_mi',
-    'diger_ucret_mi',
-    'nakit_odeme_mi'
-]
+# Kullanıcı giriş alanları
+passenger_count = st.number_input("Yolcu Sayısı", min_value=1, max_value=6, value=1)
+trip_distance = st.number_input("Yolculuk Mesafesi (mil)", min_value=0.0, value=1.5)
+PULocationID = st.number_input("Alış Noktası ID", min_value=0, value=130)
+DOLocationID = st.number_input("Varış Noktası ID", min_value=0, value=205)
+yolculuk_suresi = st.number_input("Yolculuk Süresi (saniye)", min_value=60, value=600)
 
-input_data = pd.DataFrame([[
-    passenger_count,
-    trip_distance,
-    PULocationID,
-    DOLocationID,
-    yolculuk_suresi,
-    1 if pazarlikli_mi == "Evet" else 0,
-    1 if jfk_ucreti_mi == "Evet" else 0,
-    1 if diger_ucret_mi == "Evet" else 0,
-    1 if nakit_odeme_mi == "Evet" else 0
-]], columns=columns_order)
+# Diğer binary değişkenler (1 ya da 0)
+jfk_ucreti_mi = st.selectbox("JFK Ücreti Var mı?", [0, 1])
+nakit_mi = st.selectbox("Nakit mi?", [0, 1])
+pazarlikli_mi = st.selectbox("Pazarlıklı mı?", [0, 1])
+nakit_odeme_mi = st.selectbox("Nakit Ödeme mi?", [0, 1])
+diger_ucret_mi = st.selectbox("Diğer Ücret Var mı?", [0, 1])
 
-# Tahmin
-if st.button("Tahmini Ücreti Hesapla"):
+# Giriş verisini oluştur
+input_data = pd.DataFrame([{
+    "passenger_count": passenger_count,
+    "trip_distance": trip_distance,
+    "PULocationID": PULocationID,
+    "DOLocationID": DOLocationID,
+    "yolculuk_suresi": yolculuk_suresi,
+    "jfk_ucreti_mi": jfk_ucreti_mi,
+    "nakit_mi": nakit_mi,
+    "pazarlikli_mi": pazarlikli_mi,
+    "nakit_odeme_mi": nakit_odeme_mi,
+    "diger_ucret_mi": diger_ucret_mi
+}])
+
+# Gerekli olan tüm diğer değişkenleri sıfırla (eksikse model hata verir)
+for col in model.feature_names_:
+    if col not in input_data.columns:
+        input_data[col] = 0
+
+# Sıralama garanti olsun
+input_data = input_data[model.feature_names_]
+
+# Tahmin butonu
+if st.button("Ücreti Tahmin Et"):
     prediction = model.predict(input_data)[0]
-    st.success(f"Tahmini Ücret: ${prediction:.2f}")
+    st.success(f"🚕 Tahmini Ücret: ${prediction:.2f}")
