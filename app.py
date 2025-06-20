@@ -41,7 +41,6 @@ input_data = pd.DataFrame([{
     "DOLocationID": DOLocationID,
     "yolculuk_suresi": yolculuk_suresi,
     "jfk_ucreti_mi": jfk_ucreti_mi,
-    "nakit_mi": nakit_mi,
     "pazarlikli_mi": pazarlikli_mi,
     "nakit_odeme_mi": nakit_odeme_mi,
     "diger_ucret_mi": diger_ucret_mi
