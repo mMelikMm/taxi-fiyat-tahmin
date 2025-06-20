@@ -23,7 +23,7 @@ with col1:
 
 with col2:
     DOLocationID = st.number_input("🎯 Varış Noktası ID", min_value=0, value=205)
-    nakit_mi = st.radio("💵 Nakit mi?", [0, 1], horizontal=True)
+
     pazarlikli_mi = st.radio("🤝 Pazarlıklı mı?", [0, 1], horizontal=True)
     nakit_odeme_mi = st.radio("🧾 Nakit Ödeme mi?", [0, 1], horizontal=True)
     diger_ucret_mi = st.radio("➕ Diğer Ücret Var mı?", [0, 1], horizontal=True)
