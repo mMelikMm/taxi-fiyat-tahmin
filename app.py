@@ -14,8 +14,8 @@ st.markdown("New York City içindeki bir yolculuk için **tahmini ücret** öğr
 
 with st.sidebar:
     st.image("https://i.imgur.com/NKX5oIY.png", caption="NYC Taxi", use_column_width=True)
-    st.markdown("Bu uygulama bir Machine Learning projesidir.")
-    st.markdown("**Model:** CatBoost Regressor")
+    st.markdown("Bu uygulama Melik Koçak tarafından yapılan bir Machine Learning projesidir.")
+    st.markdown("**Kullandığım Model:** CatBoost Regressor")
     st.markdown("Veri: NYC Yellow Taxi")
 
 
@@ -69,4 +69,5 @@ input_data = input_data[model.feature_names_]
 if st.button("🎯 Tahmini Ücreti Hesapla"):
     prediction = model.predict(input_data)[0]
     st.success(f"🚕 Tahmini Taksi Ücreti: **${prediction:.2f}**")
+
 
